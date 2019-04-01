@@ -19,3 +19,20 @@ lint: prometheus_alert_rules.yaml
 
 clean:
 	rm -rf prometheus_alert_rules.yaml
+
+kubernetes_object_yaml:
+	jb install
+	cp ./extras/manifests/prometheus-rules.yaml .
+	mkdir -p ./extras/vendor/ceph-mixins
+	cp -Rf ./alerts ./mixin.libsonnet ./config.libsonnet ./extras/vendor/ceph-mixins
+	cd ./extras && ./build.sh example.jsonnet
+	echo $?
+	cat ./prometheus-rules.yaml
+	cat ./extras/manifests/prometheus-rules.yaml
+	diff ./prometheus-rules.yaml ./extras/manifests/prometheus-rules.yaml
+	cmp -s ./prometheus-rules.yaml ./extras/manifests/prometheus-rules.yaml; \
+	RETVAL=$$?; \
+	if [ $$RETVAL -ne 0 ]; then \
+		echo "Rule files are different"; \
+		exit 1; \
+	fi
